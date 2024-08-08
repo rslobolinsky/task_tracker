@@ -5,7 +5,7 @@
 выполнении ключевых задач.
 
 Установка и запуск:
-1) Установите Python и Poetry если они не установлены.
+1) Установите Python и venv если они не установлены.
 2) Клонируйте репозиторий git clone https://github.com/rslobolinsky/task_tracker.git
 3) Установите Docker и Docker Desktop.
 4) Запустите в директории проекта команду docker compose up.
