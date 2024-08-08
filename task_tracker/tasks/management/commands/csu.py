@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from tasks.models import Employee, Task
+from task_tracker.tasks.models import Employee, Task
 from django.utils import timezone
 
 

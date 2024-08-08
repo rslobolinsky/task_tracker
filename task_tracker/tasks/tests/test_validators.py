@@ -1,7 +1,7 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.urls import reverse
-from tasks.models import Employee, Task
+from task_tracker.tasks.models import Employee, Task
 
 
 class EmployeeValidationTest(APITestCase):
