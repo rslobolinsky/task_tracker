@@ -29,7 +29,7 @@ class Task(models.Model):
     parent_task = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='sub_tasks')
     assignee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True)
     deadline = models.DateField()
-    status = models.CharField(max_length=50)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES)
     additional_info = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
