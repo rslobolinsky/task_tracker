@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
-from datetime import timedelta
+from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -142,10 +142,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-}
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
@@ -180,11 +176,4 @@ CELERY_TASK_TRACK_STARTED = True
 # Максимальное время на выполнение задачи
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
-CELERY_BEAT_SCHEDULE = {
-    "task-name": {
-        "task": "habit.tasks.send_habit_reminder",  # Исправить my_task на свою функцию
-        "schedule": timedelta(
-            minutes=10
-        ),  # Расписание выполнения задачи (например, каждые 10 минут)
-    },
-}
+

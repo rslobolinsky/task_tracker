@@ -3,13 +3,16 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from task_tracker.tasks.models import Employee, Task
 
+
 class SpecialEndpointsAPITest(APITestCase):
 
     def setUp(self):
         self.employee1 = Employee.objects.create(full_name='John Doe', position='Developer')
         self.employee2 = Employee.objects.create(full_name='Jane Doe', position='Manager')
-        self.task1 = Task.objects.create(name='Task 1', assignee=self.employee1, deadline='2024-12-31', status='In Progress')
-        self.task2 = Task.objects.create(name='Task 2', parent_task=self.task1, deadline='2024-12-31', status='Not Started')
+        self.task1 = Task.objects.create(name='Task 1', assignee=self.employee1, deadline='2024-12-31',
+                                         status='In Progress')
+        self.task2 = Task.objects.create(name='Task 2', parent_task=self.task1, deadline='2024-12-31',
+                                         status='Not Started')
 
     def test_busy_employees(self):
         url = reverse('busy-employees')

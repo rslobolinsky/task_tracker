@@ -2,6 +2,7 @@ from django.test import TestCase
 from task_tracker.tasks.models import Employee, Task
 from task_tracker.tasks.serializers import EmployeeSerializer, TaskSerializer
 
+
 class EmployeeSerializerTest(TestCase):
 
     def test_employee_serialization(self):
@@ -10,6 +11,7 @@ class EmployeeSerializerTest(TestCase):
         data = serializer.data
         self.assertEqual(data['full_name'], "John Doe")
         self.assertEqual(data['position'], "Developer")
+
 
 class TaskSerializerTest(TestCase):
 
