@@ -17,7 +17,6 @@
 - python 3.11
 - django 4.2.2
 - djangorestframework 3.14.0
-- nginx
 - gunicorn
 - PostgreSQL
 - Docker
