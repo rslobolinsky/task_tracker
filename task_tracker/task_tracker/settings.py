@@ -162,18 +162,10 @@ CACHES = {
     }
 }
 
-# URL-адрес брокера сообщений
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
-
 # Часовой пояс для работы Celery
 CELERY_TIMEZONE = TIME_ZONE
 
 # Флаг отслеживания выполнения задач
 CELERY_TASK_TRACK_STARTED = True
-
-# Максимальное время на выполнение задачи
-CELERY_TASK_TIME_LIMIT = 30 * 60
 
 current_time = datetime.now()
