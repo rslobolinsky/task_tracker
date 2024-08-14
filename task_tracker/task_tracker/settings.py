@@ -154,18 +154,3 @@ CORS_ALLOWED_ORIGINS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://read-and-write.example.com",
 ]
-
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.getenv("REDIS_URL"),
-    }
-}
-
-# Часовой пояс для работы Celery
-CELERY_TIMEZONE = TIME_ZONE
-
-# Флаг отслеживания выполнения задач
-CELERY_TASK_TRACK_STARTED = True
-
-current_time = datetime.now()
