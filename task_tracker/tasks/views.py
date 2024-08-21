@@ -24,11 +24,13 @@ def busy_employees(request):
     return Response(data)
 
 
-@api_view(['GET'])
+@api_view(['GET']) # исправить
 def important_tasks(request):
     unassigned_tasks = Task.objects.filter(status='Not Started', sub_tasks__status='In Progress').distinct()
     least_loaded_employee = Employee.objects.annotate(task_count=Count('task')).order_by('task_count').first()
     important_tasks = []
+    if not least_loaded_employee:
+        return Response([])
 
     for task in unassigned_tasks:
         candidates = Employee.objects.annotate(task_count=Count('task')).filter(
