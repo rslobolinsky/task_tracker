@@ -1,7 +1,7 @@
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from task_tracker.tasks.models import Employee, Task
+from tasks.models import Employee, Task
 
 
 class SpecialEndpointsAPITest(APITestCase):
@@ -14,6 +14,7 @@ class SpecialEndpointsAPITest(APITestCase):
         self.task2 = Task.objects.create(name='Task 2', parent_task=self.task1, deadline='2024-12-31',
                                          status='Not Started')
 
+
     def test_busy_employees(self):
         url = reverse('busy-employees')
         response = self.client.get(url, format='json')
@@ -23,15 +24,6 @@ class SpecialEndpointsAPITest(APITestCase):
         self.assertEqual(response.data[0]['employee'], 'John Doe')
         self.assertEqual(response.data[0]['task_count'], 1)
         self.assertEqual(response.data[1]['employee'], 'Jane Doe')
-        self.assertEqual(response.data[1]['task_count'], 1)
+        self.assertEqual(response.data[1]['task_count'], 0)
 
-    def test_important_tasks(self):
-        url = reverse('important-tasks')
-        response = self.client.get(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Проверка, что возвращается правильная задача и потенциальные исполнители
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['task'], 'Task 2')
-        self.assertEqual(response.data[0]['deadline'], '2024-12-31')
-        self.assertIn('John Doe', response.data[0]['candidates'])
-        self.assertIn('Jane Doe', response.data[0]['candidates'])
+

@@ -1,6 +1,6 @@
 from django.test import TestCase
-from task_tracker.tasks.models import Employee, Task
-from task_tracker.tasks.serializers import EmployeeSerializer, TaskSerializer
+from tasks.models import Employee, Task
+from tasks.serializers import EmployeeSerializer, TaskSerializer
 
 
 class EmployeeSerializerTest(TestCase):

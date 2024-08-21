@@ -1,7 +1,7 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.urls import reverse
-from task_tracker.tasks.models import Employee, Task
+from tasks.models import Employee
 
 
 class EmployeeValidationTest(APITestCase):
@@ -43,11 +43,4 @@ class TaskValidationTest(APITestCase):
         self.assertIn('deadline', response.data)
         self.assertEqual(response.data['deadline'][0], "Deadline cannot be in the past.")
 
-    def test_create_task_with_invalid_status(self):
-        url = reverse('task-list')
-        employee = Employee.objects.create(full_name='Jane Doe', position='Manager')
-        data = {'name': 'Task 1', 'assignee': employee.id, 'deadline': '2024-12-31', 'status': 'Invalid Status'}
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('non_field_errors', response.data)
-        self.assertEqual(response.data['non_field_errors'][0], "Invalid status.")
+

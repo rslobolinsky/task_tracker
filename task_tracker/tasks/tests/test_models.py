@@ -1,5 +1,5 @@
 from django.test import TestCase
-from task_tracker.tasks.models import Employee, Task
+from tasks.models import Employee, Task
 
 
 class EmployeeModelTest(TestCase):

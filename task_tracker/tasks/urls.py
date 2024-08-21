@@ -8,6 +8,6 @@ router.register(r'tasks', TaskViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('busy-employees/', busy_employees),
-    path('important-tasks/', important_tasks),
+    path('busy-employees/', busy_employees, name='busy-employees'),
+    path('important-tasks/', important_tasks, name='important-tasks'),
 ]
