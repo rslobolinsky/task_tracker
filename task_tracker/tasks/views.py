@@ -11,6 +11,7 @@ from django.db.models import Count, Q
 
 logger = logging.getLogger(__name__)
 
+
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
@@ -27,27 +28,34 @@ def busy_employees(request):
     data = [{'employee': emp.full_name, 'task_count': emp.task_count} for emp in employees]
     return Response(data)
 
+    # @api_view(['GET'])
+    # def important_tasks(request):
+    #     unassigned_tasks = Task.objects.filter(status='Not Started', sub_tasks__status='In Progress').distinct()
+    #     least_loaded_employee = Employee.objects.annotate(task_count=Count('task')).order_by('task_count').first()
+    #     #important_tasks = []
+    #     #if not least_loaded_employee:
+    #         #return Response([])
+    #
+    #     for task in unassigned_tasks:
+    #         candidates = Employee.objects.annotate(task_count=Count('task')).filter(
+    #             Q(task_count__lte=least_loaded_employee.task_count + 2) |
+    #             Q(task__in=task.parent_task.sub_tasks.all())
+    #         )
+    #         important_tasks.append({
+    #             'task': task.name,
+    #             'deadline': task.deadline,
+    #             'candidates': [emp.full_name for emp in candidates]
+    #         })
+    #
+    #     return Response(serializer.data)
+
 
 @api_view(['GET'])
 def important_tasks(request):
-    unassigned_tasks = Task.objects.filter(status='Not Started', sub_tasks__status='In Progress').distinct()
-    least_loaded_employee = Employee.objects.annotate(task_count=Count('task')).order_by('task_count').first()
-    #important_tasks = []
-    #if not least_loaded_employee:
-        #return Response([])
-
-    for task in unassigned_tasks:
-        candidates = Employee.objects.annotate(task_count=Count('task')).filter(
-            Q(task_count__lte=least_loaded_employee.task_count + 2) |
-            Q(task__in=task.parent_task.sub_tasks.all())
-        )
-        important_tasks.append({
-            'task': task.name,
-            'deadline': task.deadline,
-            'candidates': [emp.full_name for emp in candidates]
-        })
-
-    return Response(important_tasks)
+    tasks = Task.objects.filter(parent_task=True)
+    serializer = TaskSerializer(tasks, many=True)
+    print(serializer.data)  # Печать данных для отладки
+    return Response(serializer.data)
 
 
 class ImportantTasksView(APIView):
