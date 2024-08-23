@@ -19,12 +19,6 @@ class Task(models.Model):
         ('Completed', 'Completed'),
     ]
 
-    PRIORITY_CHOICES = [
-        ('Low', 'Low'),
-        ('Medium', 'Medium'),
-        ('High', 'High'),
-    ]
-
     name = models.CharField(max_length=200)
     parent_task = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='sub_tasks')
     assignee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True)
