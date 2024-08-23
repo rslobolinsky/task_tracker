@@ -1,4 +1,7 @@
+import logging
 from rest_framework import viewsets
+from rest_framework.views import APIView
+
 from .models import Employee, Task
 from .serializers import EmployeeSerializer, TaskSerializer
 
@@ -6,6 +9,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.db.models import Count, Q
 
+logger = logging.getLogger(__name__)
 
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
@@ -24,13 +28,13 @@ def busy_employees(request):
     return Response(data)
 
 
-@api_view(['GET']) # исправить
+@api_view(['GET'])
 def important_tasks(request):
-    unassigned_tasks = Task.objects.filter(status='Not Started', sub_tasks__status='In Progress').distinct()
+    unassigned_tasks = Task.objects.filter(status='Not Started', sub_tasks='In Progress').distinct()
     least_loaded_employee = Employee.objects.annotate(task_count=Count('task')).order_by('task_count').first()
-    important_tasks = []
-    if not least_loaded_employee:
-        return Response([])
+    #important_tasks = []
+    #if not least_loaded_employee:
+        #return Response([])
 
     for task in unassigned_tasks:
         candidates = Employee.objects.annotate(task_count=Count('task')).filter(
@@ -44,3 +48,14 @@ def important_tasks(request):
         })
 
     return Response(important_tasks)
+
+
+class ImportantTasksView(APIView):
+    def get(self, request, *args, **kwargs):
+        important_tasks = Task.objects.filter(
+            status='Not Started',
+            parent_task__status='In Progress'
+        )
+        logger.debug(f'Important tasks: {important_tasks}')
+        serializer = TaskSerializer(important_tasks, many=True)
+        return Response(serializer.data)
