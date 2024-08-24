@@ -68,9 +68,6 @@ def busy_employees(request):
 
 
 class TaskCreateAPIView(CreateAPIView):
-    """
-    Контроллер создания новой задачи.
-    """
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [AllowAny]
@@ -92,7 +89,7 @@ class TaskListAPIView(ListAPIView):
                               type=openapi.TYPE_INTEGER),
             openapi.Parameter('deadline', openapi.IN_QUERY, description="Дата выполнения задачи",
                               type=openapi.TYPE_STRING),
-            openapi.Parameter('subt_asks', openapi.IN_QUERY, description="Фильтрация задач по наличию подзадач",
+            openapi.Parameter('sub_tasks', openapi.IN_QUERY, description="Фильтрация задач по наличию подзадач",
                               type=openapi.TYPE_BOOLEAN),
             openapi.Parameter('has_parent', openapi.IN_QUERY,
                               description="Фильтрация задач по наличию родительской задачи",
@@ -107,15 +104,15 @@ class TaskListAPIView(ListAPIView):
 
         # Проверка на допустимость фильтров
         allowed_filters = set(self.filterset_fields)
-        requested_filters = set(self.request.query_params.keys()) - {'subtasks', 'has_parent'}
+        requested_filters = set(self.request.query_params.keys()) - {'subt_asks', 'has_task'}
         invalid_filters = requested_filters - allowed_filters
 
         if invalid_filters:
-            raise ValidationError(f"Фильтрация по полю(-ям) {', '.join(invalid_filters)} невозможна. "
+            raise ValidationError(f"Фильтрация по полю(-ям) {', '.join(invalid_filters)} невозможна." 
                                   f"Доступные поля для фильтрации: {', '.join(allowed_filters)}")
 
         # Фильтрация по наличию подзадач
-        subtasks_param = self.request.query_params.get('subtasks')
+        subtasks_param = self.request.query_params.get('subt_asks')
         if subtasks_param is not None:
             if subtasks_param.lower() in ('true', '1'):
                 queryset = queryset.filter(subtasks__isnull=False).distinct()

@@ -1,5 +1,5 @@
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import DefaultRouter, SimpleRouter
 
 from task_tracker.apps import TaskConfig
 from .views import EmployeeViewSet, TaskViewSet, busy_employees, ImportantTasksListAPIView, TaskListAPIView, \
@@ -8,9 +8,9 @@ from .views import EmployeeViewSet, TaskViewSet, busy_employees, ImportantTasksL
 
 app_name = TaskConfig.name
 
-router = DefaultRouter()
-router.register(r'employees', EmployeeViewSet)
-router.register(r'task_tracker', TaskViewSet)
+router = SimpleRouter()
+# router.register(r'employees', EmployeeViewSet)
+# router.register(r'task_tracker', TaskViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
