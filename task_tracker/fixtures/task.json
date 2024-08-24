@@ -1,0 +1,44 @@
+[
+    {
+        "model": "task_tracker.Task",
+        "pk": 1,
+        "fields": {
+            "name": "Design Database Schema",
+            "parent_task": null,
+            "assignee": 1,
+            "deadline": "2024-08-30",
+            "status": "In Progress",
+            "additional_info": "Database schema for the new project.",
+            "created_at": "2024-08-01T08:00:00Z",
+            "updated_at": "2024-08-01T08:00:00Z"
+        }
+    },
+    {
+        "model": "task_tracker.Task",
+        "pk": 2,
+        "fields": {
+            "name": "Develop API Endpoints",
+            "parent_task": 1,
+            "assignee": 1,
+            "deadline": "2024-09-15",
+            "status": "Not Started",
+            "additional_info": "REST API for mobile app.",
+            "created_at": "2024-08-10T08:00:00Z",
+            "updated_at": "2024-08-10T08:00:00Z"
+        }
+    },
+    {
+        "model": "task_tracker.Task",
+        "pk": 3,
+        "fields": {
+            "name": "Prepare Project Timeline",
+            "parent_task": null,
+            "assignee": 2,
+            "deadline": "2024-09-01",
+            "status": "Completed",
+            "additional_info": "Timeline for all project phases.",
+            "created_at": "2024-07-25T08:00:00Z",
+            "updated_at": "2024-07-25T08:00:00Z"
+        }
+    }
+]

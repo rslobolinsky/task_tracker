@@ -1,0 +1,35 @@
+[
+    {
+        "model": "task_tracker.Employee",
+        "pk": 1,
+        "fields": {
+            "full_name": "John Doe",
+            "position": "Software Engineer",
+            "additional_info": "Specializes in backend development",
+            "created_at": "2024-01-01T08:00:00Z",
+            "updated_at": "2024-01-01T08:00:00Z"
+        }
+    },
+    {
+        "model": "task_tracker.Employee",
+        "pk": 2,
+        "fields": {
+            "full_name": "Jane Smith",
+            "position": "Project Manager",
+            "additional_info": "Expert in Agile methodologies",
+            "created_at": "2024-01-01T08:00:00Z",
+            "updated_at": "2024-01-01T08:00:00Z"
+        }
+    },
+    {
+        "model": "task_tracker.Employee",
+        "pk": 3,
+        "fields": {
+            "full_name": "Alice Brown",
+            "position": "UX Designer",
+            "additional_info": "Focus on user-centered design",
+            "created_at": "2024-01-01T08:00:00Z",
+            "updated_at": "2024-01-01T08:00:00Z"
+        }
+    }
+]
