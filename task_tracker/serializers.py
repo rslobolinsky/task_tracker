@@ -1,3 +1,4 @@
+from django.db.models import Count
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -9,11 +10,11 @@ from .models import Employee, Task
 
 class EmployeeSerializer(ModelSerializer):
     active_task_count = SerializerMethodField()
-    tasks = SerializerMethodField
+    task = SerializerMethodField()
 
     def get_tasks(self, employee):
-        tasks = Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress'])
-        return TaskSummarySerializer(tasks, many=True).data
+        task = Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress'])
+        return EmployeeSerializer(task, many=True).data
 
     def get_active_task_count(self, employee):
         return Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress']).count()
@@ -104,31 +105,18 @@ class ImportantTaskSerializer(ModelSerializer):
     potential_employees = SerializerMethodField()
 
     def get_potential_employees(self, task):
-
-        employees = Employee.objects.all()
-        if not employees:
-            return []
-
-        # Определяем минимальное количество задач у сотрудников
-        min_task_count = None
-        for employee in employees:
-            task_count = Task.objects.filter(assignee=employee).count()
-            if min_task_count is None or task_count < min_task_count:
-                min_task_count = task_count
+        employees = Employee.objects.annotate(task_count=Count('task')).all()
+        min_task_count = employees.aggregate(min_task_count=min('task_count'))['min_task_count']
 
         suitable_employees = []
 
-        # Отбираем сотрудников, которые могут взять задачу
         for employee in employees:
-            task_count = Task.objects.filter(assignee=employee).count()
+            task_count = employee.task_count
             parent_task_employee = Task.objects.filter(parent_task=task, assignee=employee).exists()
 
-            # Если сотрудник имеет минимальную загруженность или выполняет родительскую задачу,
-            # и у него не более чем на 2 задачи больше, чем у наименее загруженного сотрудника
             if task_count == min_task_count or (parent_task_employee and task_count <= min_task_count + 2):
                 employee_name = (f"{employee.full_name}. ID:{employee.id}").strip()
-                if employee_name not in suitable_employees:
-                    suitable_employees.append(employee_name)
+                suitable_employees.append(employee_name)
 
         return suitable_employees
 
