@@ -1,4 +1,5 @@
 from django.db import models
+from prompt_toolkit.validation import ValidationError
 
 
 class Employee(models.Model):
@@ -8,13 +9,14 @@ class Employee(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
+
     def __str__(self):
         return self.full_name
 
 
 class Task(models.Model):
     STATUS_CHOICES = [
-        ('New task', 'New Task'),
+        ('New Task', 'New Task'),
         ('Not Started', 'Not Started'),
         ('In Progress', 'In Progress'),
         ('Completed', 'Completed'),
@@ -32,3 +34,12 @@ class Task(models.Model):
     def __str__(self):
         return self.name
 
+
+    def clean(self):
+        if self.parent_task and self.deadline < self.parent_task.deadline:
+            raise ValidationError('Task')
+
+    def save(self, *args, **kwargs):
+        self.clean()
+
+        super(Task, self).save(*args, **kwargs)

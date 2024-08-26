@@ -1,20 +1,18 @@
-from datetime import datetime
-
 from django.utils import timezone
-
-from rest_framework import serializers, viewsets
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SerializerMethodField
 from rest_framework.serializers import ModelSerializer
-from rest_framework.exceptions import ValidationError
 
 from .models import Employee, Task
 
 
 class EmployeeSerializer(ModelSerializer):
     active_task_count = SerializerMethodField()
+    tasks = SerializerMethodField
 
     def get_tasks(self, employee):
-        tasks = Task.objects.filter(assigned_to=employee, status__in=['New Task', 'In Progress'])
+        tasks = Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress'])
         return TaskSummarySerializer(tasks, many=True).data
 
     def get_active_task_count(self, employee):
@@ -71,9 +69,18 @@ class BusyEmployeeSerializer(ModelSerializer):
 class TaskSerializer(ModelSerializer):
     sub_tasks = SerializerMethodField()
 
-    def get_sub_tasks(self, task):
-        # Возвращаем только список ID подзадач
-        return task.sub_tasks.values_list('id', flat=True)
+    def get_tasks(self, employee):
+        # Получаем задачи, назначенные на сотрудника
+        tasks = Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress'])
+
+        # Получаем родительские задачи для подзадач, назначенных на сотрудника
+        parent_tasks = Task.objects.filter(sub_tasks__assignee=employee,
+                                           sub_tasks__status__in=['New Task', 'In Progress']).distinct()
+
+        # Объединяем две выборки
+        all_tasks = tasks.union(parent_tasks)
+
+        return TaskSerializer(all_tasks, many=True).data
 
     def validate_deadline(self, value):
         if value < timezone.now().date():
@@ -86,16 +93,11 @@ class TaskSerializer(ModelSerializer):
 
     # Проверяет, что статус задачи является одним из допустимых значений ('Not Started', 'In Progress', 'Completed').
     def validate(self, data):
-        if data['status'] not in ['Not Started', 'In Progress', 'Completed']:
+        if data['status'] not in ['New Task', 'In Progress', 'Not Started', 'Completed']:
             raise serializers.ValidationError("Invalid status.")
         return data
 
-    def update(self, instance, validated_data):
-        instance.assignee = validated_data.get('assignee', instance.assignee)
-        if 'status' in validated_data:
-            instance.status = validated_data['status']
-        instance.save()
-        return instance
+
 
 
 class ImportantTaskSerializer(ModelSerializer):

@@ -64,7 +64,7 @@ class BusyEmployeesListAPIView(ListAPIView):
 
     def get_queryset(self):
 
-        employees = Employee.objects.all()
+        employees = Employee.objects.prefetch_related('tasks').all()
 
         employee_task_data = []
         for employee in employees:
