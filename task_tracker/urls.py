@@ -2,15 +2,15 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter, SimpleRouter
 
 from task_tracker.apps import TaskConfig
-from .views import EmployeeViewSet, TaskViewSet, busy_employees, ImportantTasksListAPIView, TaskListAPIView, \
+from .views import ImportantTasksListAPIView, TaskListAPIView, \
     TaskCreateAPIView, TaskRetrieveAPIView, TaskUpdateAPIView, TaskDestroyAPIView, EmployeeListAPIView, \
-    EmployeeCreateAPIView, EmployeeRetrieveAPIView, EmployeeUpdateAPIView, EmployeeDestroyAPIView
+    EmployeeCreateAPIView, EmployeeRetrieveAPIView, EmployeeUpdateAPIView, EmployeeDestroyAPIView, \
+    BusyEmployeesListAPIView
 
 app_name = TaskConfig.name
 
 router = SimpleRouter()
-# router.register(r'employees', EmployeeViewSet)
-# router.register(r'task_tracker', TaskViewSet)
+
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -20,7 +20,7 @@ urlpatterns = [
     path('employees/<int:pk>/update/', EmployeeUpdateAPIView.as_view(), name='employee-update'),
     path('employees/<int:pk>/delete/', EmployeeDestroyAPIView.as_view(), name='employee-delete'),
 
-    path('busy-employees/', busy_employees, name='busy-employees'),
+    path('employees/busy/', BusyEmployeesListAPIView.as_view(), name='busy-employees'),
 
     path('tasks/', TaskListAPIView.as_view(), name='task-list'),
     path('tasks/create/', TaskCreateAPIView.as_view(), name='task-create'),

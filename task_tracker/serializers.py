@@ -51,6 +51,7 @@ class TaskSummarySerializer(ModelSerializer):
         model = Task
         fields = ['id', 'name', 'deadline', 'status', 'parent_task']
 
+
 class BusyEmployeeSerializer(ModelSerializer):
     tasks = SerializerMethodField()
     active_task_count = SerializerMethodField()
@@ -66,8 +67,8 @@ class BusyEmployeeSerializer(ModelSerializer):
         model = Employee
         fields = ['id', 'full_name', 'position', 'active_task_count', 'tasks']
 
-class TaskSerializer(ModelSerializer):
 
+class TaskSerializer(ModelSerializer):
     sub_tasks = SerializerMethodField()
 
     def get_sub_tasks(self, task):
@@ -98,7 +99,6 @@ class TaskSerializer(ModelSerializer):
 
 
 class ImportantTaskSerializer(ModelSerializer):
-
     potential_employees = SerializerMethodField()
 
     def get_potential_employees(self, task):
@@ -133,6 +133,3 @@ class ImportantTaskSerializer(ModelSerializer):
     class Meta:
         model = Task
         fields = ['id', 'name', 'deadline', 'potential_employees']
-
-
-

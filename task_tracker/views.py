@@ -1,5 +1,3 @@
-import logging
-
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -16,7 +14,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.db.models import Count, Q
 
-logger = logging.getLogger(__name__)
 
 
 class EmployeeCreateAPIView(CreateAPIView):
@@ -60,11 +57,47 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
 
 
-@api_view(['GET'])
-def busy_employees(request):
-    employees = Employee.objects.annotate(task_count=Count('task')).order_by('-task_count')
-    data = [{'employee': emp.full_name, 'task_count': emp.task_count} for emp in employees]
-    return Response(data)
+class BusyEmployeesListAPIView(ListAPIView):
+
+    serializer_class = BusyEmployeeSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+
+        employees = Employee.objects.all()
+
+        employee_task_data = []
+        for employee in employees:
+            active_tasks = Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress'])
+            active_task_count = active_tasks.count()
+
+            # Находим самую раннюю дату выполнения задач
+            earliest_deadline = None
+            for task in active_tasks:
+                if earliest_deadline is None or task.deadline < earliest_deadline:
+                    earliest_deadline = task.deadline
+
+            # Добавляем данные в список
+            employee_task_data.append({
+                'employee': employee,
+                'tasks': active_tasks,
+                'active_task_count': active_task_count,
+                'earliest_deadline': earliest_deadline,
+            })
+
+        # Сортируем сотрудников сначала по количеству задач, затем по самой ранней дате выполнения задач
+        sorted_employee_data = sorted(
+            employee_task_data,
+            key=lambda x: (-x['active_task_count'], x['earliest_deadline'] or '9999-12-31')
+        )
+
+        # Возвращаем отсортированный список сотрудников
+        return [data['employee'] for data in sorted_employee_data]
+# @api_view(['GET'])
+# def busy_employees(request):
+#     employees = Employee.objects.annotate(task_count=Count('task')).order_by('-task_count')
+#     data = [{'employee': emp.full_name, 'task_count': emp.task_count} for emp in employees]
+#     return Response(data)
 
 
 class TaskCreateAPIView(CreateAPIView):
@@ -104,7 +137,7 @@ class TaskListAPIView(ListAPIView):
 
         # Проверка на допустимость фильтров
         allowed_filters = set(self.filterset_fields)
-        requested_filters = set(self.request.query_params.keys()) - {'subt_asks', 'has_task'}
+        requested_filters = set(self.request.query_params.keys()) - {'sub_tasks', 'has_task'}
         invalid_filters = requested_filters - allowed_filters
 
         if invalid_filters:
@@ -112,7 +145,7 @@ class TaskListAPIView(ListAPIView):
                                   f"Доступные поля для фильтрации: {', '.join(allowed_filters)}")
 
         # Фильтрация по наличию подзадач
-        subtasks_param = self.request.query_params.get('subt_asks')
+        subtasks_param = self.request.query_params.get('sub_tasks')
         if subtasks_param is not None:
             if subtasks_param.lower() in ('true', '1'):
                 queryset = queryset.filter(subtasks__isnull=False).distinct()
@@ -137,9 +170,7 @@ class TaskRetrieveAPIView(RetrieveAPIView):
 
 
 class TaskUpdateAPIView(UpdateAPIView):
-    """
-    Контроллер для обновления данных одной задачи по указанному id.
-    """
+
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [AllowAny]
@@ -237,10 +268,6 @@ class ImportantTasksListAPIView(ListAPIView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        """
-        Возвращает список задач, которые не взяты в работу (статус 'new'),
-        но от которых зависят другие задачи, находящиеся в работе.
-        """
         important_tasks = Task.objects.filter(
             status='New Task',
             parent_task__status='In Progress'
