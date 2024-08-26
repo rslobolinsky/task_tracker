@@ -8,12 +8,12 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from .models import Employee, Task
-from .serializers import EmployeeSerializer, TaskSerializer, ImportantTaskSerializer, BusyEmployeeSerializer
+from .serializers import EmployeeSerializer, TaskSerializer, BusyEmployeeSerializer, \
+    TaskSummarySerializer, TaskWithPotentialEmployeesSerializer
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.db.models import Count, Q
-
+from django.db.models import Count, Q, Min
 
 
 class EmployeeCreateAPIView(CreateAPIView):
@@ -58,41 +58,55 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 
 class BusyEmployeesListAPIView(ListAPIView):
-
     serializer_class = BusyEmployeeSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
+        # Агрегируем данные о задачах для каждого сотрудника
+        employees = Employee.objects.annotate(
+            active_task_count=Count('task', filter=Q(task__status__in=['New Task', 'In Progress'])),
+            earliest_deadline=Min('task__deadline', filter=Q(task__status__in=['New Task', 'In Progress']))
+        ).order_by('-active_task_count', 'earliest_deadline')
 
-        employees = Employee.objects.prefetch_related('tasks').all()
+        return employees
 
-        employee_task_data = []
-        for employee in employees:
-            active_tasks = Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress'])
-            active_task_count = active_tasks.count()
 
-            # Находим самую раннюю дату выполнения задач
-            earliest_deadline = None
-            for task in active_tasks:
-                if earliest_deadline is None or task.deadline < earliest_deadline:
-                    earliest_deadline = task.deadline
-
-            # Добавляем данные в список
-            employee_task_data.append({
-                'employee': employee,
-                'tasks': active_tasks,
-                'active_task_count': active_task_count,
-                'earliest_deadline': earliest_deadline,
-            })
-
-        # Сортируем сотрудников сначала по количеству задач, затем по самой ранней дате выполнения задач
-        sorted_employee_data = sorted(
-            employee_task_data,
-            key=lambda x: (-x['active_task_count'], x['earliest_deadline'] or '9999-12-31')
-        )
-
-        # Возвращаем отсортированный список сотрудников
-        return [data['employee'] for data in sorted_employee_data]
+# class BusyEmployeesListAPIView(ListAPIView):
+#
+#     serializer_class = BusyEmployeeSerializer
+#     permission_classes = [AllowAny]
+#
+#     def get_queryset(self):
+#
+#         employees = Employee.objects.selected_related('tasks').all()
+#
+#         employee_task_data = []
+#         for employee in employees:
+#             active_tasks = Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress'])
+#             active_task_count = active_tasks.count()
+#
+#             # Находим самую раннюю дату выполнения задач
+#             earliest_deadline = None
+#             for task in active_tasks:
+#                 if earliest_deadline is None or task.deadline < earliest_deadline:
+#                     earliest_deadline = task.deadline
+#
+#             # Добавляем данные в список
+#             employee_task_data.append({
+#                 'employee': employee,
+#                 'tasks': active_tasks,
+#                 'active_task_count': active_task_count,
+#                 'earliest_deadline': earliest_deadline,
+#             })
+#
+#         # Сортируем сотрудников сначала по количеству задач, затем по самой ранней дате выполнения задач
+#         sorted_employee_data = sorted(
+#             employee_task_data,
+#             key=lambda x: (-x['active_task_count'], x['earliest_deadline'] or '9999-12-31')
+#         )
+#
+#         # Возвращаем отсортированный список сотрудников
+#         return [data['employee'] for data in sorted_employee_data]
 # @api_view(['GET'])
 # def busy_employees(request):
 #     employees = Employee.objects.annotate(task_count=Count('task')).order_by('-task_count')
@@ -141,7 +155,7 @@ class TaskListAPIView(ListAPIView):
         invalid_filters = requested_filters - allowed_filters
 
         if invalid_filters:
-            raise ValidationError(f"Фильтрация по полю(-ям) {', '.join(invalid_filters)} невозможна." 
+            raise ValidationError(f"Фильтрация по полю(-ям) {', '.join(invalid_filters)} невозможна."
                                   f"Доступные поля для фильтрации: {', '.join(allowed_filters)}")
 
         # Фильтрация по наличию подзадач
@@ -170,7 +184,6 @@ class TaskRetrieveAPIView(RetrieveAPIView):
 
 
 class TaskUpdateAPIView(UpdateAPIView):
-
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [AllowAny]
@@ -263,14 +276,38 @@ class TaskDestroyAPIView(DestroyAPIView):
 #                 queryset = queryset.none()
 #         return queryset
 
+# class ImportantTasksListAPIView(ListAPIView):
+#     serializer_class = ImportantTaskSerializer
+#     permission_classes = [AllowAny]
+#
+#     def get_queryset(self):
+#         important_tasks = Task.objects.filter(
+#             status='New Task',
+#             parent_task__status='In Progress'
+#         )
+#
+#         return important_tasks
+
 class ImportantTasksListAPIView(ListAPIView):
-    serializer_class = ImportantTaskSerializer
+    serializer_class = TaskWithPotentialEmployeesSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        important_tasks = Task.objects.filter(
-            status='New Task',
-            parent_task__status='In Progress'
+        # Задачи без назначений
+        tasks_without_assignee = Task.objects.filter(
+            assignee__isnull=True
         )
 
-        return important_tasks
+        # Задачи с родительской задачей в статусе 'In Progress'
+        parent_tasks_in_progress = Task.objects.filter(
+            Q(parent_task__isnull=False) &
+            Q(parent_task__status='In Progress')
+        )
+
+        # Используем Q-объекты для объединения запросов
+        queryset = Task.objects.filter(
+            Q(id__in=tasks_without_assignee.values('id')) |
+            Q(id__in=parent_tasks_in_progress.values('id'))
+        ).distinct()
+
+        return queryset

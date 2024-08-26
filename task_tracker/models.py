@@ -9,7 +9,6 @@ class Employee(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
-
     def __str__(self):
         return self.full_name
 
@@ -34,12 +33,10 @@ class Task(models.Model):
     def __str__(self):
         return self.name
 
-
     def clean(self):
-        if self.parent_task and self.deadline < self.parent_task.deadline:
-            raise ValidationError('Task')
+        if self.parent_task and self.deadline > self.parent_task.deadline:
+            raise ValidationError('Task deadline cannot be earlier than parent task deadline.')
 
     def save(self, *args, **kwargs):
         self.clean()
-
         super(Task, self).save(*args, **kwargs)

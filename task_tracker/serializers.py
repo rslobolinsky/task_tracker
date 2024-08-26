@@ -1,4 +1,4 @@
-from django.db.models import Count
+from django.db.models import Count, Min, Q
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -10,11 +10,11 @@ from .models import Employee, Task
 
 class EmployeeSerializer(ModelSerializer):
     active_task_count = SerializerMethodField()
-    task = SerializerMethodField()
+    tasks = SerializerMethodField()
 
     def get_tasks(self, employee):
-        task = Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress'])
-        return EmployeeSerializer(task, many=True).data
+        tasks = Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress'])
+        return TaskSummarySerializer(tasks, many=True).data
 
     def get_active_task_count(self, employee):
         return Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress']).count()
@@ -31,7 +31,7 @@ class EmployeeSerializer(ModelSerializer):
 
     class Meta:
         model = Employee
-        fields = ['id', 'full_name', 'position', 'active_task_count']
+        fields = ['id', 'full_name', 'position', 'active_task_count', 'tasks']
 
 
 class TaskSummarySerializer(ModelSerializer):
@@ -50,38 +50,30 @@ class TaskSummarySerializer(ModelSerializer):
         model = Task
         fields = ['id', 'name', 'deadline', 'status', 'parent_task']
 
-
 class BusyEmployeeSerializer(ModelSerializer):
     tasks = SerializerMethodField()
     active_task_count = SerializerMethodField()
 
     def get_tasks(self, employee):
-        tasks = Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress'])
+        # Возвращаем все задачи, назначенные сотруднику
+        tasks = Task.objects.filter(assignee=employee)
         return TaskSummarySerializer(tasks, many=True).data
 
     def get_active_task_count(self, employee):
-        return Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress']).count()
+        # Считаем только задачи со статусом 'New Task' и 'In Progress'
+        return Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress', 'Not Started']).count()
 
     class Meta:
         model = Employee
         fields = ['id', 'full_name', 'position', 'active_task_count', 'tasks']
 
-
 class TaskSerializer(ModelSerializer):
     sub_tasks = SerializerMethodField()
 
-    def get_tasks(self, employee):
-        # Получаем задачи, назначенные на сотрудника
-        tasks = Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress'])
-
-        # Получаем родительские задачи для подзадач, назначенных на сотрудника
-        parent_tasks = Task.objects.filter(sub_tasks__assignee=employee,
-                                           sub_tasks__status__in=['New Task', 'In Progress']).distinct()
-
-        # Объединяем две выборки
-        all_tasks = tasks.union(parent_tasks)
-
-        return TaskSerializer(all_tasks, many=True).data
+    def get_sub_tasks(self, task):
+        if task.sub_tasks.exists():
+            return TaskSummarySerializer(task.sub_tasks.all(), many=True).data
+        return []
 
     def validate_deadline(self, value):
         if value < timezone.now().date():
@@ -99,26 +91,30 @@ class TaskSerializer(ModelSerializer):
         return data
 
 
+class PotentialEmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = ['id', 'full_name']
 
-
-class ImportantTaskSerializer(ModelSerializer):
-    potential_employees = SerializerMethodField()
+class TaskWithPotentialEmployeesSerializer(serializers.ModelSerializer):
+    potential_employees = serializers.SerializerMethodField()
 
     def get_potential_employees(self, task):
-        employees = Employee.objects.annotate(task_count=Count('task')).all()
-        min_task_count = employees.aggregate(min_task_count=min('task_count'))['min_task_count']
+        # Получение всех сотрудников с количеством задач
+        employees = Employee.objects.annotate(
+            task_count=Count('task', filter=Q(task__status__in=['New Task', 'In Progress']))
+        )
 
-        suitable_employees = []
+        # Находим минимальное количество задач у сотрудников
+        min_task_count = employees.aggregate(min_task_count=Min('task_count'))['min_task_count']
 
-        for employee in employees:
-            task_count = employee.task_count
-            parent_task_employee = Task.objects.filter(parent_task=task, assignee=employee).exists()
+        # Получаем сотрудников, которые могут взять задачу
+        suitable_employees = employees.filter(
+            Q(task_count__lte=min_task_count + 2) |
+            Q(id__in=task.sub_tasks.values('assignee'))
+        )
 
-            if task_count == min_task_count or (parent_task_employee and task_count <= min_task_count + 2):
-                employee_name = (f"{employee.full_name}. ID:{employee.id}").strip()
-                suitable_employees.append(employee_name)
-
-        return suitable_employees
+        return PotentialEmployeeSerializer(suitable_employees, many=True).data
 
     class Meta:
         model = Task
