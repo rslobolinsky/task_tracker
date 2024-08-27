@@ -35,15 +35,7 @@ schema_view = get_schema_view(
 
 
 urlpatterns = [
-    # path('admin/', admin.site.urls),
-    # path('task_tracker/', include('task_tracker.urls', 'task_tracker')),
-    # path('users/', include('users.urls', 'users')),
-    # path('api/', include('task_tracker.urls')),
-    # # Swagger UI
-    # # re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    # path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    # # ReDoc UI
-    # path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 

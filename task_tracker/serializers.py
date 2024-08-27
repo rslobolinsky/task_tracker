@@ -1,3 +1,5 @@
+import re
+
 from django.db.models import Count, Min, Q
 from django.utils import timezone
 from rest_framework import serializers
@@ -20,8 +22,8 @@ class EmployeeSerializer(ModelSerializer):
         return Task.objects.filter(assignee=employee, status__in=['New Task', 'In Progress']).count()
 
     def validate_full_name(self, value):
-        if not value.isalpha():
-            raise ValidationError("Имя должно содержать только буквы.")
+        if not re.match(r'^[A-Za-z\s]+$', value):
+            raise ValidationError("Имя должно содержать только буквы и пробелы.")
         return value
 
     def validate_position(self, value):
@@ -50,6 +52,7 @@ class TaskSummarySerializer(ModelSerializer):
         model = Task
         fields = ['id', 'name', 'deadline', 'status', 'parent_task']
 
+
 class BusyEmployeeSerializer(ModelSerializer):
     tasks = SerializerMethodField()
     active_task_count = SerializerMethodField()
@@ -66,6 +69,7 @@ class BusyEmployeeSerializer(ModelSerializer):
     class Meta:
         model = Employee
         fields = ['id', 'full_name', 'position', 'active_task_count', 'tasks']
+
 
 class TaskSerializer(ModelSerializer):
     sub_tasks = SerializerMethodField()
@@ -95,6 +99,7 @@ class PotentialEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = ['id', 'full_name']
+
 
 class TaskWithPotentialEmployeesSerializer(serializers.ModelSerializer):
     potential_employees = serializers.SerializerMethodField()

@@ -5,7 +5,7 @@ from prompt_toolkit.validation import ValidationError
 class Employee(models.Model):
     full_name = models.CharField(max_length=100)
     position = models.CharField(max_length=100)
-    additional_info = models.TextField(blank=True, null=True)
+    additional_info = models.TextField(blank=True, null=True, default='')
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 

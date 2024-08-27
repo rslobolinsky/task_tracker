@@ -27,7 +27,6 @@ urlpatterns = [
     path('tasks/<int:pk>/', TaskRetrieveAPIView.as_view(), name='task-detail'),
     path('tasks/<int:pk>/update/', TaskUpdateAPIView.as_view(), name='task-update'),
     path('tasks/<int:pk>/delete/', TaskDestroyAPIView.as_view(), name='task-delete'),
-    #path('important-task_tracker/', important_tasks, name='important-task_tracker'),
     path('tasks/important/', ImportantTasksListAPIView.as_view(), name='important-tasks'),
 ]
 
